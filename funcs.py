@@ -11,7 +11,9 @@ import numpy as np
 import cv2
 from shapely.geometry import box
 from tqdm import tqdm
+from typing import Tuple
 
+from scipy.integrate import quad
 
 def get_polygons(col_):
 
@@ -49,7 +51,7 @@ def bounds_by_polygons(polygons_):
         b_y = np.maximum(np.max(yy),b_y)
     return [[a_x,b_x],[a_y,b_y]]
 
-def make_grids(hx,hy, bounds_):
+def make_grids(hx,hy,bounds_):
     Nx = int((bounds_[0][1]-bounds_[0][0])/hx) + 1 
     Ny = int((bounds_[1][1]-bounds_[1][0])/hy) + 1
     xgrid = np.linspace(start=bounds_[0][0],stop=bounds_[0][1],num=Nx)
@@ -172,3 +174,98 @@ def CUPmasks(masks_):
         else:
             omask_ = np.logical_or(omask_, masks_[i])
     return omask_.astype(np.intc)
+
+
+def place_gauss_on_grid(number_of_gaussians, bounds ,xgrid,ygrid):
+    u = np.zeros(shape=(len(xgrid),len(ygrid)))
+    a_x = bounds[0][0]
+    b_x = bounds[0][1]
+    a_y = bounds[1][0]
+    b_y = bounds[1][1]
+    mu_x = np.zeros(shape=(number_of_gaussians,))
+    mu_y = np.zeros(shape=(number_of_gaussians,))
+    for i in range(number_of_gaussians):
+        mu_x[i] = np.random.uniform(low=a_x,
+                                    high=b_x)
+        mu_y[i] = np.random.uniform(low=a_y,
+                                    high=b_y)
+
+
+def FloatDistr(data,fig_size=(4,3),title=''):
+    fig, ax = plt.subplots()
+    fig.set_size_inches(fig_size[0],fig_size[1])
+    x = []
+    for i in range(len(data)):
+        if np.isnan(data[i]):
+            continue
+        else:
+            x.append(data[i])
+    u_vs = np.unique(x)
+
+    if len(x) == 0:
+        ax.set_title(title +' is empty data')
+    elif len(u_vs)==1:
+        ax.set_title(title + ' all data is repeated with value: {}'.format(u_vs[0]))
+    else:
+        x = np.asarray(x)
+        q25, q75 = np.percentile(x, [25, 75])
+        bins = 0
+        if q25==q75:
+            bins = np.minimum(100,len(u_vs))
+        else:
+            bin_width = 2 * (q75 - q25) * len(x) ** (-1 / 3)
+            bins = np.minimum(100, round((np.max(x) - np.min(x)) / bin_width))
+        nan_rate = np.sum(np.isnan(data))/len(data)
+        ax.set_title(title+'. n of unique values {}'.format(len(u_vs)))
+        ax.set_xlabel('nan rate {}'.format(nan_rate))
+        density,bins = np.histogram(x,bins=bins,density=True)
+        unity_density = density / density.sum()
+        widths = bins[:-1] - bins[1:]
+        ax.bar(bins[1:], unity_density,width=widths)
+
+    return fig,ax
+
+def triangle_m_f(x: float, l_point: float, m_point: float, r_point: float) -> float:
+    if x <= l_point:
+        return 0.0
+    elif x >= r_point:
+        return 0.0
+    elif l_point < x <= m_point:
+        return 1 / (m_point - l_point) * x + l_point / (l_point - m_point)
+    elif m_point < x < r_point:
+        return 1 / (m_point - r_point) * x + r_point / (r_point - m_point)
+
+def make_func(type_of_func: str, func_params: list):
+    """
+    type_of_func: "triangle_m_f" only supported
+    """
+    if type_of_func == "triangle_m_f":
+        def m_f(x: float) -> float:
+            return triangle_m_f(x, func_params[0], func_params[1], func_params[2])
+
+        return m_f
+    else:
+        print("smth went wrong in make_func function")
+        raise SystemExit
+
+class Distrib:
+    support: Tuple[float, float]
+    distrib = None
+    grid: np.array
+    num_of_segments: int
+    max_x: float
+
+    def __init__(self, func, supp_of_func: Tuple[float, float], num_of_segments=5,max_x=None):
+        integral = quad(func, supp_of_func[0],
+                        supp_of_func[1])[0]
+
+        def distr(x: float):
+            return 1 / integral * func(x)
+        self.max_x = max_x
+        self.distrib = distr
+        self.support = supp_of_func
+        self.num_of_segments = num_of_segments
+        self.grid = np.linspace(start=supp_of_func[0], stop=supp_of_func[1], num=self.num_of_segments+1)
+
+    def __call__(self, x: float):
+        return self.distrib(x)
