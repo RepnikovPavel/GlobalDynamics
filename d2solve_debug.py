@@ -5,7 +5,8 @@ import matplotlib
 @jit(nopython=True)
 def F(u):
     # return u**2.0
-    return 1.0
+    # return 1.0
+    return 0.0
 
 @jit(nopython=True)
 def leftGU(x,y):
@@ -65,9 +66,9 @@ def solve(Nx,Ny,Nt,hx,hy,tau,t,x,y,u_,eps=0.01):
                 A[Nx-1][Nx-1] = 1.0/hx 
                 A[Nx-1][Nx-2] = -1.0/hx
                 for i in range(1,Nx-1):
-                    A[i][i-1] = 1.0/(4*hx**2)*D(x[i+1],y[j],u_s[i+1][j]) - 1.0/(4.0*hx**2)*D(x[i-1],y[j],u_s[i-1][j]) - 1.0/hx**2*D(x[i],y[j],u_s[i][j])
+                    A[i][i-1] = 1.0/(4.0*hx**2)*D(x[i+1],y[j],u_s[i+1][j]) - 1.0/(4.0*hx**2)*D(x[i-1],y[j],u_s[i-1][j]) - 1.0/hx**2*D(x[i],y[j],u_s[i][j])
                     A[i][i]   = 2.0/tau+2.0/(hx**2)*D(x[i],y[j],u_s[i][j])
-                    A[i][i+1] = -1.0/(4*hx**2)*D(x[i+1],y[j],u_s[i+1][j]) + 1.0/(4.0*hx**2)*D(x[i-1],y[j],u_s[i-1][j]) - 1.0/hx**2*D(x[i],y[j],u_s[i][j])
+                    A[i][i+1] = -1.0/(4.0*hx**2)*D(x[i+1],y[j],u_s[i+1][j]) + 1.0/(4.0*hx**2)*D(x[i-1],y[j],u_s[i-1][j]) - 1.0/hx**2*D(x[i],y[j],u_s[i][j])
                 B[0] = leftGU(x[0],y[j])
                 B[Nx-1] = rightGU(x[Nx-1],y[j])
                 for i in range(1,Nx-1):
@@ -96,9 +97,9 @@ def solve(Nx,Ny,Nt,hx,hy,tau,t,x,y,u_,eps=0.01):
                 Ay[Ny-1][Ny-2] = -1.0/hy
 
                 for j in range(1,Ny-1):
-                    Ay[j][j-1] = 1.0/(4*hy**2)*D(x[i],y[j+1],u_s[i][j+1]) - 1.0/(4.0*hy**2)*D(x[i],y[j-1],u_s[i][j-1]) - 1.0/hy**2*D(x[i],y[j],u_s[i][j])
+                    Ay[j][j-1] = 1.0/(4.0*hy**2)*D(x[i],y[j+1],u_s[i][j+1]) - 1.0/(4.0*hy**2)*D(x[i],y[j-1],u_s[i][j-1]) - 1.0/hy**2*D(x[i],y[j],u_s[i][j])
                     Ay[j][j]   = 2.0/tau+2.0/(hy**2)*D(x[i],y[j],u_s[i][j])
-                    Ay[j][j+1] = -1.0/(4*hy**2)*D(x[i],y[j+1],u_s[i][j+1]) + 1.0/(4.0*hy**2)*D(x[i],y[j-1],u_s[i][j-1]) - 1.0/hy**2*D(x[i],y[j],u_s[i][j])
+                    Ay[j][j+1] = -1.0/(4.0*hy**2)*D(x[i],y[j+1],u_s[i][j+1]) + 1.0/(4.0*hy**2)*D(x[i],y[j-1],u_s[i][j-1]) - 1.0/hy**2*D(x[i],y[j],u_s[i][j])
 
                 By[0] = leftGU(x[i],y[0])
                 By[Ny-1] = rightGU(x[i],y[Ny-1])
@@ -126,20 +127,20 @@ def solve(Nx,Ny,Nt,hx,hy,tau,t,x,y,u_,eps=0.01):
     return u
 
 
-hx = 0.01
+hx = 0.1
 ax= -1.0
 bx = 1.0
 Nx=  int((bx-ax)/hx)+1
 xgrid = np.linspace(ax,bx,num=Nx)
 
-hy = 0.01
+hy = 0.1
 ay= -1.0
 by = 1.0
 Ny=  int((by-ay)/hy)+1
 ygrid = np.linspace(ay,by,num=Ny)
 
 tau = 0.01
-T = 10.0
+T = 0.3
 t0 = 0.0
 Nt = int((t0+T-t0)/tau) + 1
 tgrid = np.linspace(start=t0, stop=t0+T,num=Nt)
