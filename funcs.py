@@ -269,3 +269,81 @@ class Distrib:
 
     def __call__(self, x: float):
         return self.distrib(x)
+
+# @jit(nopython=True)
+# def progonka(A,B):
+#     N = len(A)
+#     P = np.zeros(shape=(N,))
+#     Q = np.zeros(shape=(N,))
+#     x = np.zeros(shape=(N,))
+#     c0 = A[0][1]
+#     b0 = -A[0][0]
+#     d0 = B[0]
+#     P[0] = c0/b0
+#     Q[0] = -d0/b0
+#     for i in range(1,N-1):
+#         a =  A[i][i-1]
+#         b = -A[i][i]
+#         c = A[i][i+1]
+#         d = B[i]
+#         P[i] = c/(-a*P[i-1]+b)
+#         Q[i] = (-d+a*Q[i-1])/(-a*P[i-1]+b)
+
+#     # a =  A[i][i-1]
+#     # b = -A[i][i]
+#     # d = B[i]
+#     # Q[N-1] = (-d+a*Q[N-2])/(-a*P[N-2]+b)
+
+#     for i in range(N-1,0,-1):
+#         x[i-1] = P[i-1]*x[i] + Q[i-1]
+#     return x
+    
+def TDMAsolver(a, b, c, d):
+    '''
+    TDMA solver, a b c d can be NumPy array type or Python list type.
+    refer to http://en.wikipedia.org/wiki/Tridiagonal_matrix_algorithm
+    and to http://www.cfd-online.com/Wiki/Tridiagonal_matrix_algorithm_-_TDMA_(Thomas_algorithm)
+    '''
+    nf = len(d) # number of equations
+    ac, bc, cc, dc = map(np.array, (a, b, c, d)) # copy arrays
+    for it in range(1, nf):
+        mc = ac[it-1]/bc[it-1]
+        bc[it] = bc[it] - mc*cc[it-1] 
+        dc[it] = dc[it] - mc*dc[it-1]
+        	    
+    xc = bc
+    xc[-1] = dc[-1]/bc[-1]
+
+    for il in range(nf-2, -1, -1):
+        xc[il] = (dc[il]-cc[il]*xc[il+1])/bc[il]
+
+    return xc
+
+@jit(nopython=True)
+def progonka(A,B):
+    n = len(B)
+    d = B
+    a = np.zeros(n-1)
+    b = np.zeros(n)
+    c = np.zeros(n-1)
+    for i in range(n):
+        b[i] = A[i][i]
+    for i in range(1,n):
+        a[i-1] = A[i][i-1]
+        c[i-1] = A[i-1][i]
+    w= np.zeros(n-1)
+    g= np.zeros(n)
+    p = np.zeros(n)
+    
+    w[0] = c[0]/b[0]
+    g[0] = d[0]/b[0]
+
+    for i in range(1,n-1):
+        w[i] = c[i]/(b[i] - a[i-1]*w[i-1])
+    for i in range(1,n):
+        g[i] = (d[i] - a[i-1]*g[i-1])/(b[i] - a[i-1]*w[i-1])
+    p[n-1] = g[n-1]
+    for i in range(n-1,0,-1):
+        p[i-1] = g[i-1] - w[i-1]*p[i]
+    return p
+
