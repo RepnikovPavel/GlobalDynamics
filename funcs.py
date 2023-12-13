@@ -319,7 +319,7 @@ def TDMAsolver(a, b, c, d):
 
     return xc
 
-# @jit(nopython=True)
+@jit(nopython=True)
 def progonka(A,B):
     n = len(B)
     d = B
@@ -339,16 +339,16 @@ def progonka(A,B):
     g[0] = d[0]/b[0]
 
     for i in range(1,n-1):
-        if (b[i] - a[i-1]*w[i-1]) ==0.0:
-            print(1)
-            tmp_ = np.linalg.inv(A)
-            print(A)
+        # if (b[i] - a[i-1]*w[i-1]) ==0.0:
+        #     print(1)
+        #     tmp_ = np.linalg.inv(A)
+        #     print(A)
         w[i] = c[i]/(b[i] - a[i-1]*w[i-1])
     for i in range(1,n):
-        if (b[i] - a[i-1]*w[i-1])==0.0:
-            print(2)
-            tmp_ = np.linalg.inv(A)
-            print(A)
+        # if (b[i] - a[i-1]*w[i-1])==0.0:
+        #     print(2)
+        #     tmp_ = np.linalg.inv(A)
+        #     print(A)
         g[i] = (d[i] - a[i-1]*g[i-1])/(b[i] - a[i-1]*w[i-1])
     p[n-1] = g[n-1]
     for i in range(n-1,0,-1):
