@@ -6,7 +6,7 @@ import matplotlib
 def F(u):
     # return u**2.0
     # return 1.0
-    return 0.0
+    return u**2
 
 @jit(nopython=True)
 def leftGU(x,y):
@@ -38,7 +38,7 @@ def D(x,y,u):
     mu2 = -0.25
     # return u**2.0*(1.0 - np.exp(-0.5*np.square((x-mu1)/sigma)))*(1.0 - np.exp(-0.5*np.square((x-mu2)/sigma)))
     # return u**2.0
-    return 1.0
+    return u**2
 
 @jit(nopython=True)
 def K(xl,xr,ul,ur):
@@ -48,7 +48,7 @@ def K(xl,xr,ul,ur):
 def phi(x, u_tau_pola_i, u_i):
     return 0.5*(F(u_tau_pola_i)+F(u_i))
 
-@jit(nopython=True)
+# @jit(nopython=True)
 def solve(Nx,Ny,Nt,hx,hy,tau,t,x,y,u_,eps=0.01):
     u = np.copy(u_)    
     B = np.zeros(shape=(Nx,))
@@ -76,6 +76,7 @@ def solve(Nx,Ny,Nt,hx,hy,tau,t,x,y,u_,eps=0.01):
                         1.0/(4.0*hy**2)*(D(x[i],y[j+1],u[k][i][j+1])-D(x[i],y[j-1],u[k][i][j-1]))*(u[k][i][j+1]-u[k][i][j-1])+\
                         1.0/(hy**2)*D(x[i],y[j],u[k][i][j])*(u[k][i][j+1]-2.0*u[k][i][j]+u[k][i][j-1])
                 u_s[:,j] = progonka(A,B)
+                # u_s[:,j] = np.matmul(np.linalg.inv(A),B)
         
 
         # fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
@@ -107,7 +108,8 @@ def solve(Nx,Ny,Nt,hx,hy,tau,t,x,y,u_,eps=0.01):
                     By[j] = F(u_s[i][j])+2.0/tau*u_tau_pola[i][j] + \
                         1.0/(4.0*hx**2)*(D(x[i+1],y[j],u_tau_pola[i+1][j])-D(x[i-1],y[j],u_tau_pola[i-1][j]))*(u_tau_pola[i+1][j]-u_tau_pola[i-1][j])+\
                         1.0/(hx**2)*D(x[i],y[j],u_tau_pola[i][j])*(u_tau_pola[i+1][j]-2.0*u_tau_pola[i][j]+u_tau_pola[i-1][j])
-                u_s[i,:] = progonka(Ay,By)
+                # u_s[i,:] = progonka(Ay,By)
+                u_s[i,:] = np.matmul(np.linalg.inv(Ay),By)
 
         # fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
         # X, Y = np.meshgrid(x, y)
