@@ -3,29 +3,24 @@ from tqdm import tqdm
 import matplotlib
 
 @jit(nopython=True)
-def F(u):
-    # return u**2.0
-    # return 1.0
-    return u**2
+def F(t,x,y,u):
+    return np.sin(x)*np.sin(y)*np.exp(-t)
+
+@jit(nopython=True)
+def solution(t,x,y):
+    return np.sin(x)*np.sin(y)*(np.exp(t)-1.0)*np.exp(-2.0*t)
 
 
 NU_x= Distrib(make_func("triangle_m_f", [-0.5,0.0,0.5]), supp_of_func=(-0.5,0.0,0.5))
 # NU_y= Distrib(make_func("triangle_m_f", [-1.0,-0.5,0.0]), supp_of_func=(-1.0,-0.5,0.0))
 
 def NU(x,y,xgrid,ygrid):
-    return NU_x(x)*NU_x(y)  
+    # return NU_x(x)*NU_x(y)  
+    # return 1.0
+    return 0.0
 
 @jit(nopython =True)
 def D(x,y,u):
-    mu1 = 0.25
-    sigma = 0.05
-    mu2 = -0.25
-    # return u**2.0*(1.0 - np.exp(-0.5*np.square((x-mu1)/sigma)))*(1.0 - np.exp(-0.5*np.square((x-mu2)/sigma)))
-    # return u**2.0
-    # return u**2
-    # return np.exp(x-2+y)
-    # return 1.0
-    # return 1.0/(u+0.001)
     return 1.0
 
 
@@ -42,14 +37,26 @@ def solve(Nx,Ny,Nt,hx,hy,tau,t,x,y,u_):
                     L_x = (D(x[i+1],y[j],u_s[i+1][j])-D(x[i-1],y[j],u_s[i-1][j]))*(u[i+1][j]-u[i-1][j])/4.0/hx**2 + D(x[i],y[j],u_s[i][j])*(u[i+1][j]-2.0*u[i][j]+u[i-1][j])/hx**2
                     L_y = (D(x[i],y[j+1],u_s[i][j+1])-D(x[i],y[j-1],u_s[i][j-1]))*(u[i][j+1]-u[i][j-1])/4.0/hy**2 + D(x[i],y[j],u_s[i][j])*(u[i][j+1]-2.0*u[i][j]+u[i][j-1])/hy**2
 
-                    u_s[i][j] = u[i][j] + tau*(L_x+ L_y + F(u_s[i][j]))
+                    u_s[i][j] = u[i][j] + tau*(L_x+ L_y + F(t[k],x[i],y[j],u_s[i][j]))
+
+            # for j in range(1,Ny-1):
+            #     u_s[0][j] = u_s[1][j]
+            #     u_s[Nx-1][j] = u_s[Nx-2][j]
+            # for i in range(1,Nx-1):
+            #     u_s[i][0] = u_s[i][1]
+            #     u_s[i][Ny-1] = u_s[i][Ny-2]
+            
+            # u_s[0][0] = (u_s[0][1]+u_s[1][0])*0.5
+            # u_s[0][Ny-1] = (u_s[0][Ny-2]+u_s[1][Ny-1])*0.5
+            # u_s[Nx-1][0] = (u_s[Nx-2][0]+u_s[Nx-1][1])*0.5
+            # u_s[Nx-1][Ny-1] = (u_s[Nx-2][Ny-1]+u_s[Nx-1][Ny-2])*0.5
 
             for j in range(1,Ny-1):
-                u_s[0][j] = u_s[1][j]
-                u_s[Nx-1][j] = u_s[Nx-2][j]
+                u_s[0][j] = 0.0
+                u_s[Nx-1][j] = 0.0
             for i in range(1,Nx-1):
-                u_s[i][0] = u_s[i][1]
-                u_s[i][Ny-1] = u_s[i][Ny-2]
+                u_s[i][0] = 0.0
+                u_s[i][Ny-1] = 0.0
             
             u_s[0][0] = (u_s[0][1]+u_s[1][0])*0.5
             u_s[0][Ny-1] = (u_s[0][Ny-2]+u_s[1][Ny-1])*0.5
@@ -66,19 +73,19 @@ def solve(Nx,Ny,Nt,hx,hy,tau,t,x,y,u_):
 
 hx = 0.1
 
-ax= -1.0
-bx = 1.0
+ax= 0.0
+bx = np.pi
 Nx=  int((bx-ax)/hx)+1
 xgrid = np.linspace(ax,bx,num=Nx)
 
 hy = 0.1
-ay= -1.0
-by = 1.0
+ay= 0.0
+by = np.pi
 Ny=  int((by-ay)/hy)+1
 ygrid = np.linspace(ay,by,num=Ny)
 
-tau = hx/10**4
-T = 0.7
+tau = hx/10**3
+T = 0.1
 t0 = 0.0
 Nt = int((t0+T-t0)/tau) + 1
 tgrid = np.linspace(start=t0, stop=t0+T,num=Nt)
@@ -97,15 +104,30 @@ u, last_t_index = solve(Nx,Ny,Nt,hx,hy,tau,t,x,y,u_nu)
 # u[-1][Nx-1][0]= np.nan
 # u[-1][Nx-1][Ny-1]= np.nan
 
+u_analitic = np.zeros(shape=(len(xgrid),len(ygrid)))
+for i in range(len(x)):
+    for j in range(len(y)):
+        u_analitic[i][j] = solution(t[last_t_index],x[i],y[j])
+
 
 fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
 X, Y = np.meshgrid(x, y)
 surf = ax.plot_surface(X, Y, u, cmap=matplotlib.cm.jet,
                     linewidth=0, antialiased=False)
+fig.colorbar(surf)
+ax.set_title(r'$u_{method}$')
+ax.set_xlabel('x')
+ax.set_ylabel('y')
+
+
+fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+X, Y = np.meshgrid(x, y)
+surf = ax.plot_surface(X, Y, u_analitic, cmap=matplotlib.cm.jet,
+                    linewidth=0, antialiased=False)
 # ax.plot_surface(X, Y, u[0],
                     # linewidth=0, antialiased=False,alpha=0.2)
 fig.colorbar(surf)
-ax.set_title(r'$u({})$'.format(last_t_index *tau))
+ax.set_title(r'$u_{solution}$')
 ax.set_xlabel('x')
 ax.set_ylabel('y')
 plt.show()
