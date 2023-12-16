@@ -112,12 +112,13 @@ def get_binary_mask_per_state(polygorns_per_state,
             xx = jth_poly_of_ith_state[0]
             yy = jth_poly_of_ith_state[1]
             for k in range(len(xx)):
-                xi = np.intc(np.rint((xx[k]-xgrid[0])/hx))
-                yi = np.intc(np.rint((yy[k]-ygrid[0])/hy))
+                xi = np.intc((xx[k]-xgrid[0])/hx)
+                yi = np.intc((yy[k]-ygrid[0])/hy)
                 mask_per_state[xi][yi] = 1
         
         masks_.append(mask_per_state)
     return masks_
+
 
 def get_grid_points_by_mask(mask_, xgrid,ygrid):
     xx = []
