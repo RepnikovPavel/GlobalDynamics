@@ -7,7 +7,7 @@ import plotly.graph_objs as go
 hx = 1.0
 hy = 1.0
 tau = hx/10**4
-T = 1.0
+T = 2.0
 t0 = 2005.0
 
 @jit(nopython=True)
@@ -16,7 +16,8 @@ def F(t,x,y,u):
 @jit(nopython =True)
 def D(x,y,u,kmask,xindex,yindex):
     return kmask[xindex][yindex]
-# @jit(nopython=True)
+
+@jit(nopython=True)
 def solve(Nx,Ny,Nt,hx,hy,tau,t,x,y,u_, water_mask_,earth_,kmask):
     solutions = np.zeros(shape=(Nt,Nx,Ny))
     solutions[0] = np.copy(u_)
@@ -31,20 +32,23 @@ def solve(Nx,Ny,Nt,hx,hy,tau,t,x,y,u_, water_mask_,earth_,kmask):
         for s in range(iters_):
             for i in range(1,Nx-1):
                 for j in range(1,Ny-1):
-                    L_x = (D(x[i+1],y[j],u_s[i+1][j],kmask,i+1,j)-D(x[i-1],y[j],u_s[i-1][j],kmask,i-1,j))*(u[i+1][j]-u[i-1][j])/4.0/hx**2 + D(x[i],y[j],u_s[i][j],kmask,i,j)*(u[i+1][j]-2.0*u[i][j]+u[i-1][j])/hx**2
-                    L_y = (D(x[i],y[j+1],u_s[i][j+1],kmask,i,j+1)-D(x[i],y[j-1],u_s[i][j-1],kmask,i,j-1))*(u[i][j+1]-u[i][j-1])/4.0/hy**2 + D(x[i],y[j],u_s[i][j],kmask,i,j)*(u[i][j+1]-2.0*u[i][j]+u[i][j-1])/hy**2
+                    # L_x = (D(x[i+1],y[j],u_s[i+1][j],kmask,i+1,j)-D(x[i-1],y[j],u_s[i-1][j],kmask,i-1,j))*(u[i+1][j]-u[i-1][j])/4.0/hx**2 + D(x[i],y[j],u_s[i][j],kmask,i,j)*(u[i+1][j]-2.0*u[i][j]+u[i-1][j])/hx**2
+                    # L_y = (D(x[i],y[j+1],u_s[i][j+1],kmask,i,j+1)-D(x[i],y[j-1],u_s[i][j-1],kmask,i,j-1))*(u[i][j+1]-u[i][j-1])/4.0/hy**2 + D(x[i],y[j],u_s[i][j],kmask,i,j)*(u[i][j+1]-2.0*u[i][j]+u[i][j-1])/hy**2
+                    L_x = 1.0/hx**2*(u[i+1][j]-u[i][j])*np.sqrt(D(x[i+1],y[j],u_s[i+1][j],kmask,i+1,j)*D(x[i],y[j],u_s[i][j],kmask,i,j)) - 1.0/hx**2*(u[i][j]-u[i-1][j])*np.sqrt(D(x[i],y[j],u_s[i][j],kmask,i,j)*D(x[i-1],y[j],u_s[i-1][j],kmask,i-1,j))
+                    L_y = 1.0/hy**2*(u[i][j+1]-u[i][j])*np.sqrt(D(x[i],y[j+1],u_s[i][j+1],kmask,i,j+1)*D(x[i],y[j],u_s[i][j],kmask,i,j)) - 1.0/hy**2*(u[i][j]-u[i][j-1])*np.sqrt(D(x[i],y[j],u_s[i][j],kmask,i,j)*D(x[i],y[j-1],u_s[i][j-1],kmask,i,j-1))
                     u_s[i][j] = u[i][j] + tau*(L_x+ L_y + F(t[k],x[i],y[j],u_s[i][j]))
-                    if u_s[i][j] < 0.0:
-                        print(1)
-                        fig,ax = plt.subplots()
-                        ax.scatter(y, u_s[i,:],label='N')
-                        ax.scatter([y[j]],[0.0],label='bad point')
-                        ax.scatter(y, kmask[i,:],label=r'$\chi$')
-                        ax.set_yscale('symlog')
-                        for p_ in range(len(y)):
-                            ax.axvline(y[p_],c='k',alpha=0.3)
-                        ax.legend()
-                        plt.show()
+                    # if u_s[i][j] < 0.0:
+                    #     print(1)
+                    #     fig,ax = plt.subplots()
+                    #     ax.scatter(y, u_s[i,:],label='N')
+                    #     ax.scatter(y, kmask[i,:],label=r'$\chi$')
+                    #     ax.scatter([y[j]],[0.0],label='bad point')
+
+                    #     ax.set_yscale('symlog')
+                    #     for p_ in range(len(y)):
+                    #         ax.axvline(y[p_],c='k',alpha=0.3)
+                    #     ax.legend()
+                    #     plt.show()
 
         is_nan = np.sum(np.isnan(u_s)) > 0
         is_inf = np.sum(np.isinf(u_s)) > 0
