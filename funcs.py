@@ -104,17 +104,43 @@ def get_polygons_per_state(geometries_):
 
 def get_binary_mask_per_state(polygorns_per_state,
                               xgrid, ygrid,hx,hy):
+    Nx = len(xgrid)
+    Ny = len(ygrid)
     masks_ = []
-    for i in range(len(polygorns_per_state)):
+    for i in tqdm(range(len(polygorns_per_state))):
         mask_per_state = np.zeros(shape=(len(xgrid),len(ygrid)),dtype=np.intc)  
         for j in range(len(polygorns_per_state[i])):
             jth_poly_of_ith_state = polygorns_per_state[i][j]
             xx = jth_poly_of_ith_state[0]
             yy = jth_poly_of_ith_state[1]
-            for k in range(len(xx)):
-                xi = np.intc((xx[k]-xgrid[0])/hx)
-                yi = np.intc((yy[k]-ygrid[0])/hy)
-                mask_per_state[xi][yi] = 1
+
+            for k in range(0,len(xx)-1):
+                x1 = xx[k]
+                x2 = xx[k+1]
+                y1 = yy[k]
+                y2 = yy[k+1]
+                l = x2-x1
+                m = y2-y1
+                L = ((x2-x1)**2+(y2-y1)**2)**0.5
+
+                section_cnt = L/((hx**2+hy**2)**0.5)
+                t_vec = np.linspace(0.0,1.0,int(section_cnt)+1)
+                for t in t_vec:
+                    x_t = x1+l*t
+                    y_t = y1+m*t
+                    xi = np.minimum(np.intc(np.rint((x_t-xgrid[0])/hx)),len(xgrid)-1)
+                    yi = np.minimum(np.intc(np.rint((y_t-ygrid[0])/hy)), len(ygrid)-1)
+                    # xi = np.intc((x_t-xgrid[0])/hx)
+                    # yi = np.intc((y_t-ygrid[0])/hy)
+                    mask_per_state[xi][yi] = 1
+                    mask_per_state[np.minimum(xi+1,Nx-1)][yi] = 1
+                    mask_per_state[np.maximum(xi-1,0)][yi] = 1
+                    mask_per_state[xi][np.maximum(yi-1,0)] = 1
+                    mask_per_state[np.minimum(xi+1,Nx-1)][np.maximum(yi-1,0)] = 1
+                    mask_per_state[np.maximum(xi-1,0)][np.maximum(yi-1,0)] = 1
+                    mask_per_state[xi][np.minimum(yi+1,Ny-1)] = 1
+                    mask_per_state[np.minimum(xi+1,Nx-1)][np.minimum(yi+1,Ny-1)] = 1
+                    mask_per_state[np.maximum(xi-1,0)][np.minimum(yi+1,Ny-1)] = 1
         
         masks_.append(mask_per_state)
     return masks_
@@ -158,7 +184,10 @@ def get_binary_mask_per_state_cv2(source_polygons_,
         for j in range(len(source_polygons_[i])):
             mask = np.zeros([len(xgrid), len(ygrid)],dtype=np.intc)
             polygon = source_polygons_[i][j]
-            points = [[(y-ygrid[0])/(ygrid[-1]-ygrid[0])*(len(ygrid)-1),(x-xgrid[0])/(xgrid[-1]-xgrid[0])*(len(xgrid)-1)] for x, y in zip(*polygon.boundary.coords.xy)]
+            points = [[
+                       np.minimum(np.intc(np.rint(((y-ygrid[0])/(ygrid[-1]-ygrid[0])*(len(ygrid)-1)))),len(ygrid)-1),
+                       np.minimum(np.intc(np.rint(((x-xgrid[0])/(xgrid[-1]-xgrid[0])*(len(xgrid)-1)))),len(xgrid)-1)
+                       ] for x, y in zip(*polygon.boundary.coords.xy)]
             mask = cv2.fillPoly(mask, np.array([points]).astype(np.int32), color=1)
             if mask_per_state is None:
                 mask_per_state = mask
