@@ -24,20 +24,20 @@ def D(x,y):
     return 1.0
 
 
-# @jit(nopython=True)
+@jit(nopython=True)
 def solve(Nx,Ny,Nt,hx,hy,tau,t,x,y,u_):
     u = np.copy(u_)    
     end_ = False
-    iters_ = 1
+    iters_ = 20
     B = np.zeros(shape=(Nx,))
     A = np.zeros(shape=(Nx, Nx))
     By = np.zeros(shape=(Ny,))
     Ay = np.zeros(shape=(Ny, Ny))
-    errors_ = []
+    # errors_ = []
     for k in range(Nt-1):
         print(k, Nt-1)
         u_s = np.copy(u)
-        error_ = 0.0
+        # error_ = 0.0
         for s in range(iters_):
             u_tau_pola = np.zeros(shape=(Nx,Ny))
             for j in range(1,Ny-1):
@@ -55,7 +55,7 @@ def solve(Nx,Ny,Nt,hx,hy,tau,t,x,y,u_):
                     Ly = 1.0/hy**2*D(x[i],0.5*(y[j+1]+y[j]))*(u[i][j+1]- u[i][j]) - 1.0/hy**2*D(x[i],0.5*(y[j]+y[j-1]))*(u[i][j]- u[i][j-1])
                     B[i] = (F(0.5*(t[k]+t[k+1]),x[i],y[j],u_s[i][j]) + 2.0/tau*u[i][j] + Ly)
                 u_tau_pola[:,j] = progonka(A,B)
-                error_ += np.sum(np.abs(np.matmul(A,u_tau_pola[:,j].reshape(-1,1)).flatten() - B))
+                # error_ += np.sum(np.abs(np.matmul(A,u_tau_pola[:,j].reshape(-1,1)).flatten() - B))
             u_s = np.copy(u_tau_pola)
         
         u_tau_pola= np.copy(u_s)
@@ -77,9 +77,9 @@ def solve(Nx,Ny,Nt,hx,hy,tau,t,x,y,u_):
                     Lx = 1.0/hx**2*D(0.5*(x[i+1]+x[i]),y[j])*(u_tau_pola[i+1][j]- u_tau_pola[i][j]) - 1.0/hx**2*D(0.5*(x[i]+x[i-1]),y[j])*(u_tau_pola[i][j]- u_tau_pola[i-1][j])
                     By[j] = (F(0.5*(t[k]+t[k+1]),x[i],y[j],u_s[i][j])+2.0/tau*u_tau_pola[i][j] +Lx)
                 u_tau[i,:] = progonka(Ay,By)
-                error_ += np.sum(np.abs(np.matmul(Ay,u_tau[i,:].reshape(-1,1)).flatten() - By))
+                # error_ += np.sum(np.abs(np.matmul(Ay,u_tau[i,:].reshape(-1,1)).flatten() - By))
             u_s = np.copy(u_tau)
-        errors_.append(error_)
+        # errors_.append(error_)
         is_nan = np.sum(np.isnan(u_tau)) > 0
         is_inf = np.sum(np.isinf(u_tau)) > 0
         is_neg = np.sum(u_tau < 0.0) > 0
@@ -89,9 +89,9 @@ def solve(Nx,Ny,Nt,hx,hy,tau,t,x,y,u_):
         if end_:
             return u, k
         u = np.copy(u_s)
-    fig,ax = plt.subplots()
-    ax.plot(np.arange(Nt-1), errors_)
-    plt.show()
+    # fig,ax = plt.subplots()
+    # ax.plot(np.arange(Nt-1), errors_)
+    # plt.show()
     return u, Nt-1
 
 
@@ -143,23 +143,23 @@ fig.colorbar(surf)
 ax.set_title(r'$error$')
 ax.set_xlabel('x')
 ax.set_ylabel('y')
-
-fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-X, Y = np.meshgrid(x, y)
-surf = ax.plot_surface(X, Y, u, cmap=matplotlib.cm.jet,
-                    linewidth=0, antialiased=False)
-fig.colorbar(surf)
-ax.set_title(r'$u_{method}$')
-ax.set_xlabel('x')
-ax.set_ylabel('y')
-
-
-fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-X, Y = np.meshgrid(x, y)
-surf = ax.plot_surface(X, Y, u_analitic, cmap=matplotlib.cm.jet,
-                    linewidth=0, antialiased=False)
-fig.colorbar(surf)
-ax.set_title(r'$u_{solution}$')
-ax.set_xlabel('x')
-ax.set_ylabel('y')
 plt.show()
+# fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+# X, Y = np.meshgrid(x, y)
+# surf = ax.plot_surface(X, Y, u, cmap=matplotlib.cm.jet,
+#                     linewidth=0, antialiased=False)
+# fig.colorbar(surf)
+# ax.set_title(r'$u_{method}$')
+# ax.set_xlabel('x')
+# ax.set_ylabel('y')
+
+
+# fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+# X, Y = np.meshgrid(x, y)
+# surf = ax.plot_surface(X, Y, u_analitic, cmap=matplotlib.cm.jet,
+#                     linewidth=0, antialiased=False)
+# fig.colorbar(surf)
+# ax.set_title(r'$u_{solution}$')
+# ax.set_xlabel('x')
+# ax.set_ylabel('y')
+# plt.show()
