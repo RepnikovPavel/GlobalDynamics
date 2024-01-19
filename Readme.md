@@ -17,7 +17,7 @@ $$
 
 
 $$
-u_t = (\phi(t,x,y) u_x)_x + (\psi(t,x,y) u_y)_y + \frac{1}{C_0}u(t,x,y)\int_{Globe}{u(t,x,y)dS}
+u_t = (\phi(t,x,y) u_x)_x + (\psi(t,x,y) u_y)_y + \frac{1}{C_0}u(t,x,y)\int_{Globe}{u(t,x,y)dS}  
 $$  
 
 
