@@ -16,8 +16,8 @@ $$
 **my suggestion is to model global dynamics taking into account spatial distribution, taking into account the hyperbolic law for the total number of people on the globe**  
 
 
-$$  
-u_t = (\phi(t,x,y) u_x)_x + (\psi(t,x,y) u_y)_y + \frac{1}{C_0}u(t,x,y)\int_{Globe}{u(t,x,y)dS}  
+$$  u
+u_t = (\phi(t,x,y) u_x)_{x} + (\psi(t,x,y) u_y)_{y} + \frac{1}{C_0} u(t,x,y) \int_{Globe}^{}{u(t,x,y)dS}  
 $$  
 
 
